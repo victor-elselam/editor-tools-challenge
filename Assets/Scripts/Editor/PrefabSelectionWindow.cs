@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,24 +15,36 @@ namespace VictorElselam.Scripts.Editor
 
         private Vector2 scrollPos;
         private Object dataFile;
+        private History history;
+        private DataHandler dataHandler;
 
         [MenuItem("ProductMadness/PrefabSelection")]
         public static void ShowWindow()
         {
             var window = GetWindow<PrefabSelectionWindow>();
             window.titleContent = new GUIContent("PrefabSelection");
+            window.Initialize();
+        }
+
+        private void Initialize()
+        {
+            //it was causing an annoying nullref when refreshing the editor
+            history = history == null ? new History() : history;
+            dataHandler = dataHandler == null ? new DataHandler(history) : dataHandler;
         }
 
         public void OnGUI()
         {
+            Initialize();
+
             EditorGUILayout.BeginVertical();
+
             EditorGUILayout.BeginHorizontal();
-            
             EditorGUILayout.LabelField("Folder to search:", EditorStyles.whiteLargeLabel);
             GUILayout.Space(5);
-            folderToSearch = EditorGUILayout.TextField(folderToSearch); //this could be easily extended to multiple folders.
-
+            folderToSearch = EditorGUILayout.TextField(folderToSearch);
             EditorGUILayout.EndHorizontal();
+
             dataFile = EditorGUILayout.ObjectField("DataFile", dataFile, typeof(Object));
 
             if (folderToSearch != oldFolderToSearch)
@@ -48,27 +59,36 @@ namespace VictorElselam.Scripts.Editor
                         return;
                     }
                     else
+                    {
                         RefreshList(folderToSearch);
+                    }
                 }
 
                 oldFolderToSearch = folderToSearch;
             }
 
             GUILayout.Space(15);
-            EditorGUILayout.BeginHorizontal();
 
+            #region Apply/Revert
+            EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Refresh List"))
                 RefreshList(folderToSearch);
-
             if (gameObjectSelectionList.Any(gosl => gosl.IsToggled))
             {
                 if (GUILayout.Button("Apply Data"))
                     ApplyData();
             }
 
+            if (history.HasHistory)
+            {
+                if (GUILayout.Button("Revert"))
+                    RevertData();
+            }
             EditorGUILayout.EndHorizontal();
+            #endregion
 
             GUILayout.Space(15);
+
             RenderObjects();
             
             EditorGUILayout.EndVertical();
@@ -87,14 +107,10 @@ namespace VictorElselam.Scripts.Editor
         private void RefreshList(string folderToSearch)
         {
             gameObjectSelectionList.Clear();
+            history.Clear(); //this is an intended business logic, when you refresh the list your history is lost to avoid confusions when reverting
 
-            var hasFolderValue = !string.IsNullOrEmpty(folderToSearch);
-            var foldersToSearch = hasFolderValue ? new[] { folderToSearch } : null;
-            var foundGameObjects = AssetDatabase.FindAssets("t:GameObject", foldersToSearch)
-                   .Select(g => AssetDatabase.GUIDToAssetPath(g))
-                   .Select(p => AssetDatabase.LoadAssetAtPath<GameObject>(p))
-                   .Where(go => go.GetComponent<Text>() || go.GetComponentInChildren<Text>(true)) //search in the component and in inactive childs
-                   .ToList();
+            var foldersToSearch = !string.IsNullOrEmpty(folderToSearch) ? new[] { folderToSearch } : null;
+            var foundGameObjects = ExtensionMethods.FindComponentInProjectGameObjects<Text>(foldersToSearch);
 
             if (foundGameObjects.IsNullOrEmpty())
                 return;
@@ -102,19 +118,21 @@ namespace VictorElselam.Scripts.Editor
             foundGameObjects.ForEach(fgo => gameObjectSelectionList.Add(new GameObjectSelection(fgo)));
         }
 
-        private void ApplyData()
+        public void ApplyData()
         {
-            var raw = File.ReadAllText(AssetDatabase.GetAssetPath(dataFile)).Replace("\n", "").Replace("\t", "").Replace("\\\"", "");
-            var desserialized = JsonUtility.FromJson<ViewData[]>(raw);
-            var selectedPrefabs = gameObjectSelectionList.Where(gosl => gosl.IsToggled).ToList();
+            var selectedPrefabs = gameObjectSelectionList.Where(gosl => gosl.IsToggled);
+            dataHandler.StartApplyProcess(dataFile, selectedPrefabs);
 
-            //it was not clear in the test what to do in this situation, so I just repeated the configuration.
-            var currentItem = 0;
-            while (currentItem < selectedPrefabs.Count) 
-            {
-                for (int i = 0; i < desserialized.Length; i++, currentItem++)
-                    selectedPrefabs[currentItem].DataSetter.ApplyData(desserialized[i]);
-            }
+            var names = selectedPrefabs.Select(ds => ds.DataSetter.gameObject).GetGameObjectNames();
+            EditorUtility.DisplayDialog("Data applied successfuly", $"Prefabs list: \n{names}", "OK");
+        }
+
+        public void RevertData()
+        {
+            var affectedObjects = dataHandler.StartRevertProcess();
+
+            var names = affectedObjects.GetGameObjectNames();
+            EditorUtility.DisplayDialog("Prefabs reverted successly", $"Prefabs list: \n{names}", "OK");
         }
     }
 }

@@ -12,18 +12,30 @@ namespace VictorElselam.Scripts
         {
             TryToResolveComponents();
 
-            //if (TextField)
-            //{
-            //    TextField.text = viewData.Text;
-            //    TextField.color = viewData.Color;
-            //}
+            if (TextField)
+            {
+                TextField.text = viewData.Text;
+                TextField.color = viewData.Color;
+            }
+            else
+            {
+                //this will warn user if the code couldn't resolve the components
+                Debug.LogError($"{nameof(TextField)} not found in {gameObject.name}");
+            }
 
-            //if (ImageField)
-            //{
-            //    ImageField.sprite = viewData.Image;
-            //}
+            if (ImageField)
+            {
+                ImageField.sprite = viewData.Image;
+                ImageField.color = Color.white;
+            }
+            else
+            {
+                //this will warn user if the code couldn't resolve the components
+                Debug.LogError($"{nameof(ImageField)} not found in {gameObject.name}");
+            }
         }
 
+        //this will deal with misconfigured prefabs in some situations.
         private void TryToResolveComponents()
         {
             if (!TextField)
@@ -32,14 +44,14 @@ namespace VictorElselam.Scripts
             if (!ImageField)
                 ImageField = gameObject.GetComponentOrInChildren<Image>();
         }
-    }
 
-    public class ViewData
-    {
-        public string text;
-        public string color;
-        public string image;
+        public ViewData GetCurrentViewData()
+        {
+            var text = TextField ? TextField.text : "";
+            var color = TextField ? TextField.color : Color.white;
+            var image = ImageField ? ImageField.sprite : null;
 
-        
+            return new ViewData(text, color, image);
+        }
     }
 }
