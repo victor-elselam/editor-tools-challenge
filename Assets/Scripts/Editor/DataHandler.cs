@@ -47,6 +47,8 @@ namespace VictorElselam.Scripts.Editor
                     EditorUtility.SetDirty(dataSetters[currentItem].gameObject);
                 }
             }
+
+            AssetDatabase.SaveAssets();
         }
 
         private IEnumerable<DataSetter> GetDataSetters(IEnumerable<GameObjectSelection> gameObjectSelection) =>

@@ -9,7 +9,7 @@ namespace VictorElselam.Scripts
         public ViewData()
         {  }
 
-        public ViewData(string text, Color color, Sprite image)
+        public ViewData(string text, Color color, Texture image)
         {
             Text = text;
             Color = color;
@@ -22,7 +22,7 @@ namespace VictorElselam.Scripts
         {
             Text = text;
             Color = color.HexToColor();
-            Image = image.GetSpriteFromResources();
+            Image = image.GetTextureFromPath();
         }
 
         public string text;
@@ -31,6 +31,6 @@ namespace VictorElselam.Scripts
 
         public string Text { get; private set; }
         public Color Color { get; private set; }
-        public Sprite Image { get; private set; }
+        public Texture Image { get; private set; }
     }
 }

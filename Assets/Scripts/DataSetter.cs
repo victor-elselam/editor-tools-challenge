@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using UnityEditor;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace VictorElselam.Scripts
@@ -6,7 +7,7 @@ namespace VictorElselam.Scripts
     public class DataSetter : MonoBehaviour
     {
         [SerializeField] protected Text TextField;
-        [SerializeField] protected Image ImageField;
+        [SerializeField] protected RawImage ImageField;
 
         public void ApplyData(ViewData viewData)
         {
@@ -25,7 +26,7 @@ namespace VictorElselam.Scripts
 
             if (ImageField)
             {
-                ImageField.sprite = viewData.Image;
+                ImageField.texture = viewData.Image;
                 ImageField.color = Color.white;
             }
             else
@@ -42,14 +43,15 @@ namespace VictorElselam.Scripts
                 TextField = gameObject.GetComponentOrInChildren<Text>();
 
             if (!ImageField)
-                ImageField = gameObject.GetComponentOrInChildren<Image>();
+                ImageField = gameObject.GetComponentOrInChildren<RawImage>();
         }
 
+        //I opted to keep this in the component so it can be overridable
         public ViewData GetCurrentViewData()
         {
             var text = TextField ? TextField.text : "";
             var color = TextField ? TextField.color : Color.white;
-            var image = ImageField ? ImageField.sprite : null;
+            var image = ImageField ? ImageField.texture : null;
 
             return new ViewData(text, color, image);
         }

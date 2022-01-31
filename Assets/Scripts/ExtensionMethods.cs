@@ -30,16 +30,15 @@ namespace VictorElselam.Scripts
             return rgbColor;
         }
 
-        public static Sprite GetSpriteFromResources(this string path)
+        public static Texture2D GetTextureFromPath(this string path)
         {
-            var texture = Resources.Load<Texture2D>(path.Split('.')[0]);
-            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+            return AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/{path}");
         }
 
         public static T GetComponentOrInChildren<T>(this GameObject gameObject) where T : Component
         {
             var component = gameObject.GetComponent<T>();
-            if (!component) //normally I would use '??', but Unity has the annoying false null (or Missing), so is safer to check in Unity way.
+            if (!component) //normally I would use '??', but Unity has the false null (or Missing), so is safer to check in Unity way.
                 component = gameObject.GetComponentInChildren<T>(true);
 
             return component;
