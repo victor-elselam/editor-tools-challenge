@@ -120,6 +120,12 @@ namespace VictorElselam.Scripts.Editor
 
         public void ApplyData()
         {
+            if (dataFile == null)
+            {
+                EditorUtility.DisplayDialog("Error - DataFile null", "DataFile cannot be null!", "OK");
+                return;
+            }
+
             var selectedPrefabs = gameObjectSelectionList.Where(gosl => gosl.IsToggled);
             dataHandler.StartApplyProcess(dataFile, selectedPrefabs);
 
